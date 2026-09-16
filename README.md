@@ -62,11 +62,16 @@ Automation is **off by default** and starts **unarmed**. It only arms after your
 makes a stable connection to the Mac while a mode is enabled — and arming never moves the
 monitor. From there:
 
-| Mode | Keyboard leaves for Windows | Keyboard returns to Mac |
+| Mode | Keyboard leaves the Mac | Keyboard returns to the Mac |
 |---|---|---|
 | **Manual** | nothing (you use the menu) | nothing |
-| **Return to Mac** | nothing | switch monitor to the Mac |
-| **Follow both ways** | switch monitor to Windows | switch monitor to the Mac |
+| **Follow to Windows** | switch monitor to Windows | nothing — the **Windows companion** brings it back |
+
+> The Mac app only automates the direction it physically can (Mac → Windows). The old
+> "Return to Mac" / "Follow both ways" modes are gone from the menu because this monitor
+> won't accept a switch‑back command from the Mac while Windows is displayed — see
+> **Two machines, two halves** above. Install the [Windows companion](windows-companion/)
+> for the return.
 
 > **An honest limitation:** a Bluetooth disconnect can't tell "switched to Windows" apart
 > from "keyboard turned off / went to sleep / moved to a third device." Debouncing reduces

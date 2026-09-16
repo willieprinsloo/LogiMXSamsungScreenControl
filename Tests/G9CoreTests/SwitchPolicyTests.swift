@@ -140,6 +140,18 @@ final class SwitchPolicyTests: XCTestCase {
         XCTAssertEqual(ret.map { $0.target }, [.mac])
     }
 
+    func test_followToWindows_windowsOnDeparture_noMacOnReturn() {
+        let clock = FakeClock()
+        let p = makePolicy(.followToWindows, clock)
+        feedStableConnected(p, clock)          // arm
+        clock.advance(by: 1)
+        let dep = feedStableDisconnected(p, clock)
+        XCTAssertEqual(dep.map { $0.target }, [.windows])   // switches to Windows on leave
+        clock.advance(by: 5)
+        let ret = feedStableConnected(p, clock)
+        XCTAssertTrue(ret.isEmpty)              // NEVER auto-returns to Mac (companion does that)
+    }
+
     func test_manual_neverActsAutomatically() {
         let clock = FakeClock()
         let p = makePolicy(.manual, clock)

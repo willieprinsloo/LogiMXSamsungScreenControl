@@ -18,6 +18,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var isPaused: Bool = false
     @Published private(set) var helperAvailable: Bool = true
     @Published private(set) var lastRecoveryNote: String? = nil
+    /// SF Symbol name for the menu-bar icon; reflects live status.
+    @Published private(set) var menuBarSymbol: String = "display.2"
+
+    private var needsConfigSave = false
 
     private let store: ConfigurationStore
     private var config: Configuration
@@ -42,8 +46,15 @@ final class AppModel: ObservableObject {
         self.store = store
         self.config = (try? store.load()) ?? .g95ncDefault
 
+        // This monitor can't be switched back to the Mac from the Mac (see README):
+        // coerce any saved return-capable mode to the honest Mac-side mode.
+        if self.config.automation.mode == .returnToMac || self.config.automation.mode == .followBoth {
+            self.config.automation.mode = .followToWindows
+            self.needsConfigSave = true
+        }
+
         self.diagnostics = DiagnosticsStore(clock: SystemClock())
-        self.policy = SwitchPolicy(config: config.automation, clock: SystemClock())
+        self.policy = SwitchPolicy(config: self.config.automation, clock: SystemClock())
         self.provider = SystemProfilerKeyboardProvider(
             deviceName: config.keyboard.name,
             localIdentifier: config.keyboard.localIdentifier
@@ -71,6 +82,10 @@ final class AppModel: ObservableObject {
         }
         lifecycle.start()
         policy.begin()
+        if needsConfigSave {
+            try? store.save(config)   // persist the coerced mode so the file stays honest
+            needsConfigSave = false
+        }
         Task { await self.resolveDisplay() }
         startPolling()
         updateStatus()
@@ -235,6 +250,15 @@ final class AppModel: ObservableObject {
             default:
                 automationStatus = policy.armed ? "Armed and monitoring" : "Waiting for keyboard to connect to Mac"
             }
+        }
+
+        // Menu-bar icon reflects live status.
+        if isPaused {
+            menuBarSymbol = "pause.circle"
+        } else if lastObservation?.providerHealthy == false || displayUUID == nil {
+            menuBarSymbol = "display.trianglebadge.exclamationmark"
+        } else {
+            menuBarSymbol = "display.2"
         }
 
         // Last requested input.

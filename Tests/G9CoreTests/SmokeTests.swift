@@ -10,6 +10,7 @@ final class SmokeTests: XCTestCase {
 
     func testAutomationModeRawValues() {
         XCTAssertEqual(AutomationMode(rawValue: "followBoth"), .followBoth)
-        XCTAssertEqual(AutomationMode.allCases.count, 3)
+        XCTAssertEqual(AutomationMode(rawValue: "followToWindows"), .followToWindows)
+        XCTAssertEqual(AutomationMode.allCases.count, 4)
     }
 }

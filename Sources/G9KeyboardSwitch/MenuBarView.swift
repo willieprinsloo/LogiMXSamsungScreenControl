@@ -21,8 +21,10 @@ struct MenuBarView: View {
 
         Text("Automation")
         Toggle("Manual", isOn: modeBinding(.manual))
-        Toggle("Return to Mac", isOn: modeBinding(.returnToMac))
-        Toggle("Follow both ways", isOn: modeBinding(.followBoth))
+        Toggle("Follow to Windows", isOn: modeBinding(.followToWindows))
+        Text("Returning to the Mac is handled by the Windows companion.")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
 
         if model.isPaused {
             Button("Resume automation") { model.resumeAutomation() }

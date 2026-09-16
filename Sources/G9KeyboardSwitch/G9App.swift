@@ -20,8 +20,16 @@ struct G9App: App {
         MenuBarExtra {
             MenuBarView(model: delegate.model)
         } label: {
-            Image(systemName: "display")
+            MenuBarLabel(model: delegate.model)
         }
         .menuBarExtraStyle(.menu)
+    }
+}
+
+/// Reactive menu-bar icon that follows the app's live status.
+private struct MenuBarLabel: View {
+    @ObservedObject var model: AppModel
+    var body: some View {
+        Image(systemName: model.menuBarSymbol)
     }
 }

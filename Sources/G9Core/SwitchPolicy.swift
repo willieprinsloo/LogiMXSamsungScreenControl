@@ -136,7 +136,7 @@ public final class SwitchPolicy {
         }
         let wasDeparture = (state == .connected || state == .departurePending)
         state = .disconnected
-        if wasDeparture, mode == .followBoth {
+        if wasDeparture, mode == .followBoth || mode == .followToWindows {
             return emit(target: .windows, at: now, reason: "stable departure to Windows")
         }
         return []
