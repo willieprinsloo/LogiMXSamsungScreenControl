@@ -11,7 +11,7 @@ It lives quietly in your Mac's **menu bar**. No extra windows, no Dock icon, no 
 ```
  ┌──────────────┐        press Easy-Switch          ┌──────────────┐
  │     Mac      │ ─────────────────────────────────▶│   Windows    │
- │  (HDMI 3)    │                                    │   (HDMI 1)   │
+ │  (HDMI 2)    │                                    │   (HDMI 1)   │
  └──────┬───────┘                                    └──────┬───────┘
         │  keyboard disconnects / reconnects (Bluetooth)    │
         └───────────────┐                    ┌──────────────┘
@@ -49,7 +49,7 @@ This first release targets one confirmed configuration:
 |---|---|
 | Monitor | Samsung Odyssey G95NC (57″ Neo G9), input feature VCP `0x60` |
 | Windows | HDMI 1 → DDC value **5** |
-| Mac | HDMI 3 → DDC value **7** |
+| Mac | HDMI 2 → DDC value **6** (HDMI 3 has no DDC value on this firmware — see [What the hardware really does](#what-the-hardware-really-does)) |
 | Keyboard | Logitech MX Keys S (`0x046D` / `0xB378`), Bluetooth |
 | Mac | Apple Silicon (tested on M2 Max) |
 
@@ -65,38 +65,42 @@ monitor. From there:
 | Mode | Keyboard leaves the Mac | Keyboard returns to the Mac |
 |---|---|---|
 | **Manual** | nothing (you use the menu) | nothing |
-| **Follow to Windows** | switch monitor to Windows | nothing — the **Windows companion** brings it back |
+| **Follow to Windows** | switch monitor to Windows (DDC value 5) | nothing |
+| **Return to Mac** | nothing | switch monitor to Mac (DDC value 6) |
+| **Follow both ways** | switch monitor to Windows | switch monitor to Mac |
 
-> The Mac app only automates the direction it physically can (Mac → Windows). The old
-> "Return to Mac" / "Follow both ways" modes are gone from the menu because this monitor
-> won't accept a switch‑back command from the Mac while Windows is displayed — see
-> **Two machines, two halves** above. Install the [Windows companion](windows-companion/)
-> for the return.
+> Both directions are plain DDC writes, and the monitor honours them even from the input
+> that is not on screen (measured — see below). The [Windows companion](windows-companion/)
+> does the Windows → Mac half too; running both is harmless, they send the same value.
 
 > **An honest limitation:** a Bluetooth disconnect can't tell "switched to Windows" apart
 > from "keyboard turned off / went to sleep / moved to a third device." Debouncing reduces
 > false switches but can't eliminate them. That's why departure switching is an explicit,
 > opt‑in mode.
 
-## Two machines, two halves (important)
+## What the hardware really does
 
-Testing on real hardware revealed that the **G95NC only obeys input‑select DDC commands
-that arrive over the input it is currently displaying.** While it shows Windows, the Mac
-is on an inactive input, so the Mac's "switch back to me" command is accepted on the wire
-(exit 0) but **silently ignored** by the monitor. In other words:
+Measured on 2026‑09‑16 from the Windows PC (AMD GPU, HDMI 1) with the monitor's input
+register (VCP `0x60`) read back after every write:
 
-> Only the computer that is **currently on‑screen** can switch the monitor away from itself.
+| Fact | Evidence |
+|---|---|
+| DDC writes work from either machine | brightness nudged and restored; input writes below |
+| **5 = HDMI 1**, **6 = HDMI 2**, **15 (0x0F) = DisplayPort** | each write changed the register within ~5 s and the screen followed |
+| **No value selects HDMI 3** | every single‑byte value 0x00–0xFF, plus the plausible two‑byte ones, left the register unchanged. The monitor *reports* `1` while on HDMI 3 but rejects `1` as a command. `7` (the earlier assumption) is rejected too. A diff of all 256 VCP codes between HDMI 1 and HDMI 3 showed no other input register. |
+| Writes are honoured on an **inactive** input | writing 5 while the monitor showed HDMI 3 brought Windows back in ~1 s; the Mac app's write of 5 on keyboard departure works the same way |
+| Moving the Mac to **HDMI 2** fixes it | companion writes 6 → monitor on HDMI 2 within 1–3 s, three times in a row; Mac app writes 5 → back on Windows before the keyboard has even reconnected |
 
-So full two‑way following needs **both** pieces, each doing the half it can:
+Consequences:
 
-| When the keyboard… | The monitor is showing… | So the switch is done by… |
-|---|---|---|
-| leaves the **Mac** → Windows | the Mac | the **Mac app** (this repo) ✅ |
-| leaves **Windows** → Mac | Windows | the **[Windows companion](windows-companion/)** |
-
-Run the Mac app **and** the Windows companion together for automatic switching in both
-directions. With just the Mac app, "Switch to Windows" works automatically, but coming
-back to the Mac must be done from the monitor's source button or the companion.
+- The earlier "only the on‑screen computer can switch the monitor" theory was wrong. The
+  Mac's switch‑back never worked because `7` isn't a valid value, not because HDMI 3 was
+  inactive. It looks like the DDC table was inherited from a two‑HDMI design and never
+  extended to the third port.
+- **The Mac lives on HDMI 2.** Mac → Windows is a write of `5`; Windows → Mac is a write
+  of `6`. Either machine can send either value.
+- The [Windows companion](windows-companion/) and the Mac app's return modes do the same
+  job for Windows → Mac; run one or both.
 
 ## Install & run
 
@@ -115,7 +119,7 @@ manually or pick an automation mode.
 
 > **⚠️ About "Switch to Windows":** it changes the monitor to HDMI 1, which blacks out
 > *this* Mac's screen. To come back, press the monitor's **physical source button and
-> choose HDMI 3**, or trigger **Switch to Mac** from the Windows machine's side. The app
+> choose HDMI 2**, or trigger **Switch to Mac** from the Windows machine's side. The app
 > shows this recovery note whenever you request Windows.
 
 To run the tests:
@@ -155,13 +159,17 @@ docs/superpowers/plans/    the full Release-1 implementation plan
 - ✅ Core engine for detection + automation modes (config, policy, coordinator,
   diagnostics, Bluetooth parser) — **36/36 tests passing**, including the required
   activation-gate and no-oscillation suites.
-- ✅ **Windows companion** (C# tray app) for the Windows → Mac half — see
-  [`windows-companion/`](windows-companion/). Build/test on Windows.
-- ⚠️ **Confirmed hardware limit:** the Mac cannot switch the monitor back to itself while
-  Windows is displayed (the monitor ignores DDC on an inactive input). Use the Windows
-  companion for automatic return. This is a monitor firmware behaviour, not an app bug.
+- ✅ **Windows companion** (C# tray app) built and running on the Windows PC; keyboard
+  detection verified at ~1 s, DDC path verified (brightness, inputs 5/6/15).
+- ✅ **Two‑way switching verified on hardware (2026‑09‑16):** Windows → Mac via the
+  companion (value 6, ~3–5 s from Easy‑Switch), Mac → Windows via the Mac app (value 5).
+- ⚠️ **Confirmed hardware limit:** the G95NC has **no DDC value for HDMI 3** (full
+  0x00–0xFF sweep), so the Mac was moved to HDMI 2. See *What the hardware really does*.
+- ⏳ **Unverified on the Mac:** the config default change (HDMI 2 = 6), the restored
+  `Return to Mac` / `Follow both ways` menu items and the updated test were edited on the
+  Windows PC. Run `swift test` and rebuild the app on the Mac.
 - ⏳ Next: setup wizard, global shortcuts, launch-at-login, Developer‑ID signing +
-  notarization (Mac); build/verify the companion on the Windows PC.
+  notarization (Mac).
 
 See the implementation plan in `docs/superpowers/plans/` for the full milestone breakdown.
 

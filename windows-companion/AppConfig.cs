@@ -17,8 +17,12 @@ public sealed class AppConfig
     /// <summary>DDC VCP feature for input selection. 0x60 on this monitor.</summary>
     public byte VcpInputFeature { get; set; } = 0x60;
 
-    /// <summary>DDC value that selects the Mac's input (HDMI 3) on the G95NC.</summary>
-    public byte MacInputValue { get; set; } = 7;
+    /// <summary>
+    /// DDC value that selects the Mac's input: 6 = HDMI 2 on the G95NC (verified 2026-09-16,
+    /// register read-back and on-screen). The monitor honours only 5 (HDMI 1), 6 (HDMI 2)
+    /// and 15 (DisplayPort); HDMI 3 has no value at all, which is why the Mac is on HDMI 2.
+    /// </summary>
+    public byte MacInputValue { get; set; } = 6;
 
     /// <summary>
     /// Which physical monitor to control. -1 = every monitor that accepts the write

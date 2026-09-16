@@ -12,7 +12,7 @@
 
 Copied verbatim from the spec; every task implicitly includes these.
 
-- **Verified device profile only.** Monitor VCP feature `0x60` (decimal 96). Windows = HDMI 1 = DDC value **5**. Mac = HDMI 3 = DDC value **7**. These two values are the only confirmed mappings; do not advertise value 6 (HDMI 2) as verified.
+- **Verified device profile only.** Monitor VCP feature `0x60` (decimal 96). Windows = HDMI 1 = DDC value **5**. Mac = HDMI 2 = DDC value **6** (verified 2026-09-16 from Windows and by register read-back). HDMI 3 has NO DDC value on this firmware (full 0x00-0xFF sweep; only 5/6/15 honoured), which is why the Mac was moved from HDMI 3 to HDMI 2.
 - **Mandatory Mac-first activation gate.** Automation starts **unarmed**. It arms only after a stable, valid Mac keyboard connection is observed while automation is enabled, and arming sends **no** monitor command. Only a departure from an armed `Connected` state may auto-request Windows; only a return after an accepted armed departure may auto-request Mac.
 - **Armed flag is in-memory only.** Never persist it. Restart, disable/pause, provider fault, or any lifecycle suspension disarms; re-arming needs a fresh stable Mac connection.
 - **Unknown ≠ disconnected.** Query failure, timeout, malformed/unexpected JSON, or device-absent-from-both-lists ⇒ `unknown` ⇒ cancel pending, disarm, no monitor write. Only an explicit match in `device_not_connected` is a confirmed disconnect.

@@ -21,8 +21,6 @@ final class AppModel: ObservableObject {
     /// SF Symbol name for the menu-bar icon; reflects live status.
     @Published private(set) var menuBarSymbol: String = "display.2"
 
-    private var needsConfigSave = false
-
     private let store: ConfigurationStore
     private var config: Configuration
     private let policy: SwitchPolicy
@@ -45,13 +43,6 @@ final class AppModel: ObservableObject {
         let store = ConfigurationStore(directory: dir)
         self.store = store
         self.config = (try? store.load()) ?? .g95ncDefault
-
-        // This monitor can't be switched back to the Mac from the Mac (see README):
-        // coerce any saved return-capable mode to the honest Mac-side mode.
-        if self.config.automation.mode == .returnToMac || self.config.automation.mode == .followBoth {
-            self.config.automation.mode = .followToWindows
-            self.needsConfigSave = true
-        }
 
         self.diagnostics = DiagnosticsStore(clock: SystemClock())
         self.policy = SwitchPolicy(config: self.config.automation, clock: SystemClock())
@@ -82,10 +73,6 @@ final class AppModel: ObservableObject {
         }
         lifecycle.start()
         policy.begin()
-        if needsConfigSave {
-            try? store.save(config)   // persist the coerced mode so the file stays honest
-            needsConfigSave = false
-        }
         Task { await self.resolveDisplay() }
         startPolling()
         updateStatus()
@@ -173,7 +160,7 @@ final class AppModel: ObservableObject {
             return
         }
         if target == .windows {
-            lastRecoveryNote = "Switching to Windows blacks out this Mac. To return, press the monitor's source button and select HDMI 3, or use Switch to Mac from another device."
+            lastRecoveryNote = "Switching to Windows blacks out this Mac. To return, Easy-Switch the keyboard back (Return to Mac / Follow both ways), use Switch to Mac from the Windows companion, or press the monitor's source button and select HDMI 2."
         } else {
             lastRecoveryNote = nil
         }

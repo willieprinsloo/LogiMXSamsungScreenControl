@@ -1,21 +1,21 @@
 # G9 Keyboard Switch — Windows companion
 
-The other half of the two‑way switch. Runs in the Windows **system tray** and, when
-your MX Keys S keyboard **leaves Windows** (you Easy‑Switch to the Mac), tells the
-G95NC to switch its input to **HDMI 3 (the Mac)**.
+A Windows **system tray** app that watches the MX Keys S keyboard and, when it
+**leaves Windows** (you Easy‑Switch to the Mac), tells the G95NC to switch its input to
+**HDMI 2 (the Mac)** with a DDC write of value `6`. Verified on hardware 2026‑09‑16:
+about 3–5 s from Easy‑Switch to the monitor changing.
 
-## Why this exists
+## Why the Mac is on HDMI 2
 
-The Samsung G95NC only obeys input‑select DDC commands that arrive over the input it's
-**currently displaying**. So:
+Hardware testing on 2026‑09‑16 showed the G95NC has **no DDC input value for HDMI 3**.
+From this PC every single‑byte value 0x00–0xFF was written to VCP `0x60` and only
+`5` (HDMI 1), `6` (HDMI 2) and `15` (DisplayPort) were honoured; the monitor reports `1`
+while on HDMI 3 but rejects `1` as a command. Moving the Mac's cable to HDMI 2 made the
+switch work immediately. See the root README, *What the hardware really does*.
 
-- **Mac → Windows** is handled by the **Mac app** (the Mac is on‑screen when its keyboard
-  leaves, so it can switch the monitor away to Windows).
-- **Windows → Mac** must be handled **here** (Windows is on‑screen when its keyboard
-  leaves, so only Windows can switch the monitor away to the Mac).
-
-Each machine only ever switches the monitor *away from itself*. Run **both** the Mac app
-and this companion for full two‑way following.
+The monitor also honours writes from the input that is **not** on screen, so the Mac
+app's own `Return to Mac` mode can do this half as well. Running both is fine — they
+send the same value.
 
 ## Requirements
 
@@ -69,7 +69,7 @@ Defaults match the verified setup, so it should work out of the box. To override
   "KeyboardNameContains": "MX KEYS",
   "KeyboardAddress": null,
   "VcpInputFeature": 96,
-  "MacInputValue": 7,
+  "MacInputValue": 6,
   "MonitorIndex": -1,
   "PollIntervalSeconds": 1.0,
   "DepartureDebounceSeconds": 3.0,
@@ -82,23 +82,28 @@ Defaults match the verified setup, so it should work out of the box. To override
   for the G95NC in the log.
 - **KeyboardAddress** — if two "MX KEYS" devices are paired, set the exact Bluetooth
   address (from the log) to disambiguate; otherwise leave `null` to match by name.
-- **MacInputValue** `7` = HDMI 3 on this monitor (VCP `96` = `0x60`).
+- **MacInputValue** `6` = HDMI 2, where the Mac is plugged in (VCP `96` = `0x60`).
+  Known‑good values on this monitor: `5` HDMI 1, `6` HDMI 2, `15` DisplayPort. HDMI 3
+  has no value (see above). The monitor takes ~1–5 s to act on a write.
 
 ## How to test
 
 1. Start the companion on Windows (monitor showing Windows).
 2. Make sure it's **armed** (tray status: "Armed (keyboard on Windows)" — keyboard
    connected to Windows for a couple of seconds).
-3. Easy‑Switch the keyboard **to the Mac**. Within ~3–4s the monitor should switch to
-   HDMI 3 and show the Mac.
-4. If it doesn't, open the log — it shows whether the departure was detected and whether
-   `SetVCPFeature` succeeded (and on which monitor).
+3. Easy‑Switch the keyboard **to the Mac**. Within ~3–5s the monitor should switch to
+   HDMI 2 and show the Mac; the log shows the departure and
+   `SetVCPFeature(... value=6) -> ok`.
+4. `ok` only means the driver accepted the I²C write, not that the monitor obeyed. If
+   the screen doesn't change, check the Mac really is on HDMI 2 and that DDC/CI is on.
 
 ## Notes / limitations
 
 - If DDC/CI is disabled in the monitor OSD, `SetVCPFeature` fails — enable it.
-- Bluetooth connection status is polled via the Windows association‑endpoint
-  `IsConnected` property; a query failure surfaces as `Unknown` and never triggers a
-  switch (same conservative rule as the Mac app).
+- Bluetooth connection status is read from the paired device's `ConnectionStatus`
+  (via `BluetoothLEDevice` / `BluetoothDevice`), which costs milliseconds per poll. A
+  query failure, or the keyboard being unpaired, surfaces as `Unknown` and never
+  triggers a switch (same conservative rule as the Mac app). On startup the log shows a
+  `keyboard resolved` line with the name and address it locked on to.
 - A keyboard power‑off looks like a departure — same inherent ambiguity documented for the
   Mac app. Use **Pause** or the manual menu item if that becomes a nuisance.

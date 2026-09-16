@@ -118,7 +118,7 @@ public struct Configuration: Codable, Equatable, Sendable {
                 model: "Odyssey G95NC",
                 vcpFeature: 96,
                 inputs: MonitorInputs(
-                    mac: InputProfile(label: "HDMI 3", value: 7, calibrated: false),
+                    mac: InputProfile(label: "HDMI 2", value: 6, calibrated: false),   // the G95NC has no DDC value for HDMI 3; the Mac lives on HDMI 2 (see README)
                     windows: InputProfile(label: "HDMI 1", value: 5, calibrated: false)
                 )
             ),

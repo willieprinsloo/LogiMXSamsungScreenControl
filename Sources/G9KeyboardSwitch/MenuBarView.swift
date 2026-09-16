@@ -22,7 +22,9 @@ struct MenuBarView: View {
         Text("Automation")
         Toggle("Manual", isOn: modeBinding(.manual))
         Toggle("Follow to Windows", isOn: modeBinding(.followToWindows))
-        Text("Returning to the Mac is handled by the Windows companion.")
+        Toggle("Return to Mac", isOn: modeBinding(.returnToMac))
+        Toggle("Follow both ways", isOn: modeBinding(.followBoth))
+        Text("Both directions are DDC writes (Windows = HDMI 1, Mac = HDMI 2).")
             .font(.footnote)
             .foregroundStyle(.secondary)
 

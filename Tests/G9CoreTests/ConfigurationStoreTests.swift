@@ -14,7 +14,7 @@ final class ConfigurationStoreTests: XCTestCase {
         XCTAssertEqual(c.monitor.vcpFeature, 96)
         XCTAssertEqual(c.monitor.inputs.mac.value, 7)
         XCTAssertEqual(c.monitor.inputs.windows.value, 5)
-        XCTAssertEqual(c.monitor.inputs.mac.label, "HDMI 3")
+        XCTAssertEqual(c.monitor.inputs.mac.label, "HDMI 2")
         XCTAssertEqual(c.monitor.inputs.windows.label, "HDMI 1")
         XCTAssertFalse(c.monitor.inputs.mac.calibrated)
         XCTAssertFalse(c.monitor.inputs.windows.calibrated)
@@ -44,9 +44,9 @@ final class ConfigurationStoreTests: XCTestCase {
 
     func testDuplicateInputValueRejected() {
         var c = Configuration.g95ncDefault
-        c.monitor.inputs.windows.value = 7
+        c.monitor.inputs.windows.value = 6   // same as mac
         XCTAssertThrowsError(try ConfigurationStore.validate(c)) {
-            XCTAssertEqual($0 as? ConfigError, .duplicateInputValue(7))
+            XCTAssertEqual($0 as? ConfigError, .duplicateInputValue(6))
         }
     }
 

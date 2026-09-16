@@ -30,11 +30,10 @@ public enum TargetComputer: String, Codable, Sendable {
 
 /// Automation behaviour selected by the user.
 ///
-/// On the verified G95NC only `manual` and `followToWindows` are usable from the
-/// Mac: the monitor ignores input-select DDC on an inactive input, so the Mac
-/// cannot switch the monitor back to itself. `returnToMac`/`followBoth` remain in
-/// the model for monitors that DO honour inactive-input DDC and for policy tests,
-/// but the Mac UI does not offer them — the Windows companion handles the return.
+/// On the verified G95NC both directions are plain DDC writes (Windows = 5, Mac = 6
+/// on HDMI 2) and are honoured even from the input that is not on screen, so the
+/// Mac app alone can do both halves; the Windows companion does the same and the
+/// two simply agree.
 public enum AutomationMode: String, Codable, CaseIterable, Sendable {
     case manual
     case followToWindows   // switch to Windows when the keyboard leaves the Mac; no return
