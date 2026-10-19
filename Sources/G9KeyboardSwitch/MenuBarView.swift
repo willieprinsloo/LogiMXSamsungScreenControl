@@ -36,6 +36,10 @@ struct MenuBarView: View {
 
         Divider()
 
+        Toggle("Launch at login", isOn: $model.launchAtLogin)
+
+        Divider()
+
         if !model.helperAvailable {
             Text("⚠︎ Display helper (m1ddc) not found")
         }

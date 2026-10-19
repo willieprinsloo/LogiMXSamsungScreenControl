@@ -106,16 +106,34 @@ Consequences:
 
 Requirements: macOS 14+, Xcode / Swift 6 toolchain, an Apple Silicon Mac.
 
-```sh
-# Build the menu-bar app bundle (compiles + bundles m1ddc + ad-hoc signs it)
-./Scripts/build-app.sh
+**One-shot installer (recommended)** — builds, installs to `/Applications`, and
+registers the app to auto‑start on every login:
 
-# Launch it
+```sh
+./Scripts/install-mac.sh
+```
+
+**Or just build and run from the repo** (no install):
+
+```sh
+./Scripts/build-app.sh
 open "dist/G9 Keyboard Switch.app"
 ```
 
+**Build a drag‑to‑install DMG** (distribute to another Mac):
+
+```sh
+./Scripts/make-dmg.sh      # produces dist/G9KeyboardSwitch.dmg
+```
+
+**Uninstall:**
+
+```sh
+./Scripts/uninstall-mac.sh
+```
+
 A **display icon** appears at the top‑right of your menu bar. Click it to switch
-manually or pick an automation mode.
+manually, pick an automation mode, or toggle **Launch at login**.
 
 > **⚠️ About "Switch to Windows":** it changes the monitor to HDMI 1, which blacks out
 > *this* Mac's screen. To come back, press the monitor's **physical source button and
@@ -157,19 +175,18 @@ docs/superpowers/plans/    the full Release-1 implementation plan
 - ✅ **Milestone 1 — Manual controller:** menu-bar app, monitor discovery, manual
   Mac/Windows switching, bundled helper. Built and running.
 - ✅ Core engine for detection + automation modes (config, policy, coordinator,
-  diagnostics, Bluetooth parser) — **36/36 tests passing**, including the required
+  diagnostics, Bluetooth parser) — **37/37 tests passing**, including the required
   activation-gate and no-oscillation suites.
 - ✅ **Windows companion** (C# tray app) built and running on the Windows PC; keyboard
   detection verified at ~1 s, DDC path verified (brightness, inputs 5/6/15).
 - ✅ **Two‑way switching verified on hardware (2026‑09‑16):** Windows → Mac via the
   companion (value 6, ~3–5 s from Easy‑Switch), Mac → Windows via the Mac app (value 5).
-- ⚠️ **Confirmed hardware limit:** the G95NC has **no DDC value for HDMI 3** (full
-  0x00–0xFF sweep), so the Mac was moved to HDMI 2. See *What the hardware really does*.
-- ⏳ **Unverified on the Mac:** the config default change (HDMI 2 = 6), the restored
-  `Return to Mac` / `Follow both ways` menu items and the updated test were edited on the
-  Windows PC. Run `swift test` and rebuild the app on the Mac.
-- ⏳ Next: setup wizard, global shortcuts, launch-at-login, Developer‑ID signing +
-  notarization (Mac).
+- ⚠️ **Confirmed hardware fact:** the G95NC has **no DDC value for HDMI 3** (full
+  0x00–0xFF sweep), so the Mac lives on HDMI 2. See *What the hardware really does*.
+- ✅ **One-shot installers** on both sides (`Scripts/install-mac.sh`,
+  `windows-companion/install.ps1`) and **auto‑start on reboot** (Mac via `SMAppService` +
+  menu toggle, Windows via Startup‑folder shortcut).
+- ⏳ Next: setup wizard, global shortcuts, Developer‑ID signing + notarization (Mac).
 
 See the implementation plan in `docs/superpowers/plans/` for the full milestone breakdown.
 

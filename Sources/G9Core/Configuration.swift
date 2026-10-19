@@ -138,7 +138,7 @@ public struct Configuration: Codable, Equatable, Sendable {
                 manualHoldoffSeconds: 10,
                 pauseWhenLocked: true
             ),
-            launchAtLogin: false
+            launchAtLogin: true   // the app is useless if not running — on by default; toggle in menu to disable
         )
     }
 }

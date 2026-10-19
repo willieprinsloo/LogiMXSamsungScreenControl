@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import OSLog
+import ServiceManagement
 import G9Core
 
 private let log = Logger(subsystem: "solutions.metalogix.g9switch", category: "policy")
@@ -20,6 +21,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var lastRecoveryNote: String? = nil
     /// SF Symbol name for the menu-bar icon; reflects live status.
     @Published private(set) var menuBarSymbol: String = "display.2"
+    /// Reflects the launch-at-login config flag; mutating it registers/unregisters the login item.
+    @Published var launchAtLogin: Bool = false { didSet { applyLaunchAtLogin() } }
+
+    private var suppressLaunchAtLoginDidSet = true   // true during init so didSet is a no-op
 
     private let store: ConfigurationStore
     private var config: Configuration
@@ -60,6 +65,11 @@ final class AppModel: ObservableObject {
         self.mode = config.automation.mode
         self.monitorName = config.monitor.model
         self.helperAvailable = (displayController != nil)
+
+        // Mirror the config flag into the Published property without triggering the
+        // register/unregister side-effect (we do that explicitly in start()).
+        self.launchAtLogin = config.launchAtLogin
+        self.suppressLaunchAtLoginDidSet = false
     }
 
     // MARK: Lifecycle
@@ -73,9 +83,34 @@ final class AppModel: ObservableObject {
         }
         lifecycle.start()
         policy.begin()
+        syncLaunchAtLoginFromConfig()
         Task { await self.resolveDisplay() }
         startPolling()
         updateStatus()
+    }
+
+    // MARK: Launch at login
+
+    private func applyLaunchAtLogin() {
+        guard !suppressLaunchAtLoginDidSet else { return }
+        guard launchAtLogin != config.launchAtLogin else { return }
+        config.launchAtLogin = launchAtLogin
+        try? store.save(config)
+        syncLaunchAtLoginFromConfig()
+    }
+
+    private func syncLaunchAtLoginFromConfig() {
+        let svc = SMAppService.mainApp
+        do {
+            if config.launchAtLogin {
+                if svc.status != .enabled { try svc.register() }
+            } else {
+                if svc.status == .enabled { try svc.unregister() }
+            }
+            log.notice("launchAtLogin desired=\(self.config.launchAtLogin) status=\(String(describing: svc.status), privacy: .public)")
+        } catch {
+            log.error("launchAtLogin register/unregister failed: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     private func resolveDisplay() async {

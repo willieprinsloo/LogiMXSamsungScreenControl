@@ -43,7 +43,26 @@ dotnet publish -c Release -r win-x64 --self-contained false -o publish
 A tray icon appears. Right‑click it for status, **Switch monitor to Mac now** (manual
 fallback), **Pause**, **Open log folder**, and **Quit**.
 
-## Start automatically at login
+## One-shot installer (recommended)
+
+Open PowerShell in this folder and run:
+
+```powershell
+.\install.ps1
+```
+
+This publishes the project (if needed), copies it to
+`%LOCALAPPDATA%\Programs\G9WindowsCompanion\`, creates a Startup‑folder shortcut
+so it comes up on every login, and launches it. No admin rights required.
+
+To remove:
+
+```powershell
+.\uninstall.ps1          # keeps logs
+.\uninstall.ps1 -PurgeLogs
+```
+
+## Manual start-at-login (if you prefer)
 
 Press `Win+R`, type `shell:startup`, and drop a shortcut to `G9WindowsCompanion.exe`
 in that folder. (Or create a Task Scheduler task "At log on".)

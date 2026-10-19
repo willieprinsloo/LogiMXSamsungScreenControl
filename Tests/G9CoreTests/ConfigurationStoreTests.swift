@@ -12,7 +12,7 @@ final class ConfigurationStoreTests: XCTestCase {
         let c = Configuration.g95ncDefault
         XCTAssertEqual(c.schemaVersion, 1)
         XCTAssertEqual(c.monitor.vcpFeature, 96)
-        XCTAssertEqual(c.monitor.inputs.mac.value, 7)
+        XCTAssertEqual(c.monitor.inputs.mac.value, 6)   // HDMI 2 — see memory g95nc-ddc-input-values
         XCTAssertEqual(c.monitor.inputs.windows.value, 5)
         XCTAssertEqual(c.monitor.inputs.mac.label, "HDMI 2")
         XCTAssertEqual(c.monitor.inputs.windows.label, "HDMI 1")
@@ -22,7 +22,7 @@ final class ConfigurationStoreTests: XCTestCase {
         XCTAssertEqual(c.keyboard.productID, 45944)
         XCTAssertEqual(c.automation.mode, .manual)
         XCTAssertTrue(c.automation.pauseWhenLocked)
-        XCTAssertFalse(c.launchAtLogin)
+        XCTAssertTrue(c.launchAtLogin)   // default-on so the installer makes the app come up on reboot
     }
 
     func testSaveLoadRoundTrip() throws {
