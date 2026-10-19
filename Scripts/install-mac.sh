@@ -35,7 +35,7 @@ if ! cp -R "$SRC" "$DST" 2>/dev/null; then
   sudo cp -R "$SRC" "$DST"
 fi
 
-echo "==> Enabling launch-at-login in config"
+echo "==> Patching config: launchAtLogin=true + migrate legacy HDMI 3 (value 7) → HDMI 2 (value 6)"
 CFG="$HOME/Library/Application Support/G9KeyboardSwitch/config.json"
 mkdir -p "$(dirname "$CFG")"
 if [ -f "$CFG" ]; then
@@ -47,10 +47,16 @@ try:
 except Exception:
     d = {}
 d["launchAtLogin"] = True
+# The G95NC has no DDC value for HDMI 3; the Mac lives on HDMI 2 = 6.
+mac = d.get("monitor", {}).get("inputs", {}).get("mac")
+if mac and mac.get("value") == 7:
+    mac["value"] = 6
+    mac["label"] = "HDMI 2"
+    mac["calibrated"] = False
 json.dump(d, open(p, "w"), indent=2)
 PY
 fi
-# If no config yet, the app writes defaults on first run — defaults already have launchAtLogin=true.
+# If no config yet, the app writes defaults on first run — defaults already have launchAtLogin=true and HDMI 2 = 6.
 
 echo "==> Launching installed app (this registers the login item)"
 open "$DST"
